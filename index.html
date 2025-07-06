@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thai AI Lawyer - ระบบตอบคำถามกฎหมายไทยอัจฉริยะ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .question-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .question-section h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            font-weight: 400;
+            letter-spacing: 0.1px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+            letter-spacing: 0.2px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .answer-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .answer-section h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .answer-content {
+            line-height: 1.8;
+        }
+
+        .answer-content h3 {
+            color: #2d3748;
+            margin: 20px 0 10px 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .answer-content h4 {
+            color: #4a5568;
+            margin: 15px 0 8px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: -0.1px;
+        }
+
+        .answer-content p {
+            margin-bottom: 10px;
+            color: #4a5568;
+            line-height: 1.7;
+            letter-spacing: 0.1px;
+        }
+
+        .answer-content ul {
+            margin: 10px 0 10px 20px;
+            color: #4a5568;
+        }
+
+        .answer-content li {
+            margin-bottom: 5px;
+        }
+
+        .verdict {
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.1px;
+        }
+
+        .verdict.error {
+            background: #fed7d7;
+            color: #c53030;
+            border-left: 4px solid #c53030;
+        }
+
+        .verdict.success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border-left: 4px solid #2f855a;
+        }
+
+        .verdict.warning {
+            background: #fef5e7;
+            color: #d69e2e;
+            border-left: 4px solid #d69e2e;
+        }
+
+        .verdict.info {
+            background: #bee3f8;
+            color: #2b6cb0;
+            border-left: 4px solid #2b6cb0;
+        }
+
+        .law-card {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .law-card h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .law-card p {
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .confidence-bar {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+            letter-spacing: 0.1px;
+        }
+
+        .system-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .system-info h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            letter-spacing: 0.1px;
+        }
+
+        .info-value {
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.1px;
+        }
+
+        .usage-tips {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .usage-tips h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .tips-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tips-list li {
+            color: rgba(255,255,255,0.9);
+            margin: 8px 0;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            position: relative;
+            padding-left: 20px;
+            line-height: 1.5;
+            letter-spacing: 0.1px;
+        }
+
+        .tips-list li:before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .example-questions {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .example-questions h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .example-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .example-list li {
+            background: rgba(255,255,255,0.1);
+            margin: 8px 0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            letter-spacing: 0.1px;
+        }
+
+        .example-list li:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .question-section,
+            .answer-section {
+                padding: 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .info-item {
+                padding: 6px 0;
+            }
+
+            .tips-list li {
+                font-size: 0.85rem;
+                padding-left: 15px;
+            }
+
+            .example-list li {
+                font-size: 0.85rem;
+                padding: 10px 12px;
+            }
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border: 1px solid #feb2b2;
+        }
+
+        .error-content h4 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .error-content p {
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .btn-retry {
+            background: #c53030;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            letter-spacing: 0.1px;
+        }
+
+        .btn-retry:hover {
+            background: #a53030;
+            transform: translateY(-1px);
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 4px solid #2f855a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-balance-scale"></i> Thai AI Lawyer</h1>
+            <p>ระบบตอบคำถามกฎหมายไทยอัจฉริยะ - ให้คำปรึกษาด้านกฎหมายเบื้องต้น</p>
+        </div>
+
+        <div class="main-content">
+            <div class="question-section">
+                <h2><i class="fas fa-question-circle"></i> คำถามของคุณ</h2>
+                <form id="questionForm">
+                    <div class="form-group">
+                        <label for="question">กรุณาเล่ารายละเอียดปัญหาหรือคำถามด้านกฎหมาย:</label>
+                        <textarea 
+                            id="question" 
+                            class="form-control" 
+                            placeholder="เช่น: เด็กอายุ 13 ปี ไปเที่ยวกับเด็กอายุ 15 ปี แล้วมีเพศสัมพันธ์กัน มีความผิดหรือไม่?"
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="category">หมวดหมู่กฎหมาย:</label>
+                        <select id="category" class="form-control">
+                            <option value="">ทั้งหมด</option>
+                            <option value="กฎหมายอาญา">กฎหมายอาญา</option>
+                            <option value="กฎหมายแพ่ง">กฎหมายแพ่ง</option>
+                            <option value="กฎหมายครอบครัว">กฎหมายครอบครัว</option>
+                            <option value="กฎหมายแรงงาน">กฎหมายแรงงาน</option>
+                            <option value="กฎหมายคอมพิวเตอร์">กฎหมายคอมพิวเตอร์</option>
+                            <option value="กฎหมายยาเสพติด">กฎหมายยาเสพติด</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn" id="submitBtn">
+                        <i class="fas fa-search"></i> วิเคราะห์และให้คำแนะนำ
+                    </button>
+                </form>
+
+                <div class="system-info">
+                    <h3>ข้อมูลระบบ</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">เวอร์ชัน</span>
+                            <span class="info-value">2.0.0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ฐานข้อมูล</span>
+                            <span class="info-value">1,219 ข้อ</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">หมวดหมู่</span>
+                            <span class="info-value">29 หมวด</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">อัปเดตล่าสุด</span>
+                            <span class="info-value">07/07/2025</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="usage-tips">
+                    <h3>คำแนะนำการใช้งาน</h3>
+                    <ul class="tips-list">
+                        <li>ใช้คำถามที่ชัดเจนและเฉพาะเจาะจง</li>
+                        <li>ระบุหมวดหมู่กฎหมายที่เกี่ยวข้อง</li>
+                        <li>อ่านหมายเหตุสำคัญทุกครั้ง</li>
+                        <li>ปรึกษาทนายความสำหรับคดีความจริงจัง</li>
+                    </ul>
+                </div>
+
+                <div class="example-questions">
+                    <h3>ตัวอย่างคำถาม</h3>
+                    <ul class="example-list">
+                        <li onclick="setQuestion('เด็กอายุ 13 ปี ไปเที่ยวกับเด็กอายุ 15 ปี แล้วมีเพศสัมพันธ์กัน มีความผิดหรือไม่?')">
+                            เด็กอายุ 13 ปี ไปเที่ยวกับเด็กอายุ 15 ปี แล้วมีเพศสัมพันธ์กัน มีความผิดหรือไม่?
+                        </li>
+                        <li onclick="setQuestion('เพื่อนขโมยเงินในกระเป๋า ควรทำอย่างไร?')">
+                            เพื่อนขโมยเงินในกระเป๋า ควรทำอย่างไร?
+                        </li>
+                        <li onclick="setQuestion('ถูกทำร้ายร่างกาย ควรแจ้งความหรือไม่?')">
+                            ถูกทำร้ายร่างกาย ควรแจ้งความหรือไม่?
+                        </li>
+                        <li onclick="setQuestion('นายจ้างไล่ออกโดยไม่จ่ายค่าชดเชย ผิดกฎหมายหรือไม่?')">
+                            นายจ้างไล่ออกโดยไม่จ่ายค่าชดเชย ผิดกฎหมายหรือไม่?
+                        </li>
+                        <li onclick="setQuestion('ถูกแฮกเฟซบุ๊ก ควรทำอย่างไร?')">
+                            ถูกแฮกเฟซบุ๊ก ควรทำอย่างไร?
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="answer-section">
+                <h2><i class="fas fa-gavel"></i> คำตอบและคำแนะนำ</h2>
+                <div id="answerContent">
+                    <div class="loading" id="initialMessage">
+                        <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
+                        <p>กรุณาใส่คำถามด้านกฎหมายเพื่อรับคำแนะนำ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 Thai AI Lawyer - ระบบให้คำปรึกษาด้านกฎหมายเบื้องต้น</p>
+            <p style="font-size: 0.9rem; margin-top: 5px;">
+                ข้อมูลนี้เป็นเพียงข้อมูลเบื้องต้น ไม่ใช่คำปรึกษาทางกฎหมายโดยตรง
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8003';
+        
+        function setQuestion(question) {
+            document.getElementById('question').value = question;
+        }
+
+        function showLoading() {
+            const answerContent = document.getElementById('answerContent');
+            answerContent.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>กำลังวิเคราะห์และค้นหาข้อมูลกฎหมาย...</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const answerContent = document.getElementById('answerContent');
+            answerContent.innerHTML = `
+                <div class="error-message">
+                    <div class="error-content">
+                        <h4>ไม่สามารถเชื่อมต่อ</h4>
+                        <p>ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์</p>
+                        <button onclick="location.reload()" class="btn-retry">
+                            ลองใหม่
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatAnswer(data) {
+            let html = '';
+            
+            // คำตัดสิน
+            if (data.answer.includes('❌ **ผิด**') || data.answer.includes('✅ **ไม่ผิด**') || data.answer.includes('⚠️ **ต้องสอบข้อเท็จจริงเพิ่มเติม**') || data.answer.includes('ℹ️ **เป็นเรื่องสิทธิทางแพ่ง**')) {
+                const verdictMatch = data.answer.match(/(❌|✅|⚠️|ℹ️) \*\*(.*?)\*\*/);
+                if (verdictMatch) {
+                    const icon = verdictMatch[1];
+                    const verdict = verdictMatch[2];
+                    let verdictClass = 'warning';
+                    if (icon === '❌') verdictClass = 'error';
+                    else if (icon === '✅') verdictClass = 'success';
+                    else if (icon === '⚠️') verdictClass = 'warning';
+                    
+                    html += `<div class="verdict ${verdictClass}">
+                        <i class="fas fa-${icon === '❌' ? 'times-circle' : icon === '✅' ? 'check-circle' : icon === '⚠️' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                        <strong>${verdict}</strong>
+                    </div>`;
+                }
+            }
+
+            // แปลง Markdown เป็น HTML
+            let formattedAnswer = data.answer
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+
+            // แยกส่วนต่างๆ
+            const sections = formattedAnswer.split(/##\s+/);
+            
+            sections.forEach(section => {
+                if (section.trim()) {
+                    const lines = section.split('\n');
+                    const title = lines[0].replace(/[🎯📋🔎💡⚠️📚]/g, '').trim();
+                    const content = lines.slice(1).join('\n').trim();
+                    
+                    if (title && content) {
+                        html += `
+                            <div class="section">
+                                <h3>${title}</h3>
+                                <div class="content">
+                                    ${content.replace(/<p>|<\/p>/g, '')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+
+            // ความเชื่อมั่น
+            if (data.confidence !== undefined) {
+                const confidencePercent = Math.round(data.confidence * 100);
+                html += `
+                    <div class="confidence-section">
+                        <h4>ความเชื่อมั่นของคำตอบ</h4>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
+                        </div>
+                        <p>${confidencePercent}%</p>
+                    </div>
+                `;
+            }
+
+            // หมายเหตุสำคัญ
+            if (data.disclaimer) {
+                html += `
+                    <div class="disclaimer">
+                        <h4>หมายเหตุสำคัญ</h4>
+                        <div class="content">
+                            ${data.disclaimer.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        async function submitQuestion(event) {
+            event.preventDefault();
+            
+            const question = document.getElementById('question').value.trim();
+            const category = document.getElementById('category').value;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!question) {
+                showError('กรุณากรอกคำถาม');
+                return;
+            }
+
+            // แสดง loading
+            showLoading();
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        category: category || null
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                const answerContent = document.getElementById('answerContent');
+                answerContent.innerHTML = formatAnswer(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-search"></i> วิเคราะห์และให้คำแนะนำ';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('questionForm').addEventListener('submit', submitQuestion);
+
+        // Auto-resize textarea
+        document.getElementById('question').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    </script>
+</body>
+</html> 
